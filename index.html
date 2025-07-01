@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Retro Calculator</title>
+    <style>
+      /* My custom reset because browsers are weird */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        user-select: none; /* Because who selects calculator text? */
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .calc-wrapper {
+        width: 100%;
+        max-width: 320px;
+      }
+
+      h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+
+      .tagline {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        margin-bottom: 20px;
+        font-size: 0.9em;
+      }
+
+      .calculator {
+        background: #444;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .display {
+        background: #d0e6a5;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        font-family: "Courier New", monospace;
+        text-align: right;
+        min-height: 70px;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .memory-line {
+        color: #666;
+        font-size: 0.9em;
+        min-height: 1em;
+        margin-bottom: 5px;
+      }
+
+      .main-display {
+        font-size: 2em;
+        font-weight: bold;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .buttons {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      button {
+        border: none;
+        padding: 15px 0;
+        font-size: 1.2em;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.1s ease;
+        font-weight: bold;
+      }
+
+      button:active {
+        transform: scale(0.95);
+      }
+
+      .num-btn {
+        background: #f0f0f0;
+        color: #333;
+      }
+
+      .num-btn:active {
+        background: #ddd;
+      }
+
+      .zero {
+        grid-column: span 2;
+      }
+
+      .op-btn {
+        background: #ff9500;
+        color: white;
+      }
+
+      .op-btn:active {
+        background: #e08900;
+      }
+
+      .func-btn {
+        background: #a5a5a5;
+        color: white;
+      }
+
+      .func-btn:active {
+        background: #8a8a8a;
+      }
+
+      .eq-btn {
+        background: #ff9500;
+        color: white;
+      }
+
+      .eq-btn:active {
+        background: #e08900;
+      }
+
+      .credits {
+        text-align: center;
+        margin-top: 15px;
+        color: #666;
+        font-size: 0.8em;
+      }
+
+      /* Little responsive touch */
+      @media (max-width: 350px) {
+        button {
+          padding: 12px 0;
+          font-size: 1em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="calc-wrapper">
+      <h1>Grandpa's Calculator</h1>
+      <p class="tagline">(but it actually works)</p>
+
+      <div class="calculator">
+        <!-- The display with that old-school green screen look -->
+        <div class="display">
+          <div class="memory-line"></div>
+          <div class="main-display">0</div>
+        </div>
+
+        <!-- The buttons - arranged how I like them -->
+        <div class="buttons">
+          <!-- First row -->
+          <button class="func-btn" data-action="clear">C</button>
+          <button class="func-btn" data-action="backspace">⌫</button>
+          <button class="op-btn" data-op="%">%</button>
+          <button class="op-btn" data-op="/">÷</button>
+
+          <!-- Number pad -->
+          <button class="num-btn" data-num="7">7</button>
+          <button class="num-btn" data-num="8">8</button>
+          <button class="num-btn" data-num="9">9</button>
+          <button class="op-btn" data-op="*">×</button>
+
+          <button class="num-btn" data-num="4">4</button>
+          <button class="num-btn" data-num="5">5</button>
+          <button class="num-btn" data-num="6">6</button>
+          <button class="op-btn" data-op="-">−</button>
+
+          <button class="num-btn" data-num="1">1</button>
+          <button class="num-btn" data-num="2">2</button>
+          <button class="num-btn" data-num="3">3</button>
+          <button class="op-btn" data-op="+">+</button>
+
+          <!-- Bottom row -->
+          <button class="num-btn zero" data-num="0">0</button>
+          <button class="num-btn" data-num=".">.</button>
+          <button class="eq-btn" data-action="equals">=</button>
+        </div>
+      </div>
+
+      <div class="credits">
+        <p>Made with ❤️ (and probably some bugs)</p>
+      </div>
+    </div>
+
+    <script>
+      // Calculator state
+      let currentInput = "0";
+      let previousInput = "";
+      let operation = null;
+      let resetScreen = false;
+
+      // DOM elements
+      const mainDisplay = document.querySelector(".main-display");
+      const memoryLine = document.querySelector(".memory-line");
+      const numberButtons = document.querySelectorAll(".num-btn");
+      const operationButtons = document.querySelectorAll(".op-btn");
+      const equalsButton = document.querySelector(".eq-btn");
+      const clearButton = document.querySelector('[data-action="clear"]');
+      const backspaceButton = document.querySelector(
+        '[data-action="backspace"]'
+      );
+
+      // Helper functions
+      function updateDisplay() {
+        mainDisplay.textContent = currentInput;
+        memoryLine.textContent =
+          previousInput + (operation ? " " + operation : "");
+      }
+
+      function appendNumber(number) {
+        if (currentInput === "0" || resetScreen) {
+          currentInput = number;
+          resetScreen = false;
+        } else {
+          currentInput += number;
+        }
+      }
+
+      function chooseOperation(op) {
+        if (currentInput === "") return;
+        if (previousInput !== "") {
+          compute();
+        }
+        operation = op;
+        previousInput = currentInput;
+        resetScreen = true;
+      }
+
+      function compute() {
+        let computation;
+        const prev = parseFloat(previousInput);
+        const current = parseFloat(currentInput);
+
+        if (isNaN(prev)) return;
+        if (isNaN(current)) {
+          currentInput = prev.toString();
+          operation = null;
+          previousInput = "";
+          return;
+        }
+
+        switch (operation) {
+          case "+":
+            computation = prev + current;
+            break;
+          case "−":
+            computation = prev - current;
+            break;
+          case "×":
+            computation = prev * current;
+            break;
+          case "÷":
+            if (current === 0) {
+              currentInput = "Error";
+              operation = null;
+              previousInput = "";
+              return;
+            }
+            computation = prev / current;
+            break;
+          case "%":
+            computation = prev % current;
+            break;
+          default:
+            return;
+        }
+
+        currentInput = computation.toString();
+        operation = null;
+        previousInput = "";
+      }
+
+      function clear() {
+        currentInput = "0";
+        previousInput = "";
+        operation = null;
+      }
+
+      function backspace() {
+        if (currentInput.length === 1) {
+          currentInput = "0";
+        } else {
+          currentInput = currentInput.slice(0, -1);
+        }
+      }
+
+      function addDecimal() {
+        if (resetScreen) {
+          currentInput = "0.";
+          resetScreen = false;
+          return;
+        }
+        if (currentInput.includes(".")) return;
+        currentInput += ".";
+      }
+
+      // Event listeners
+      numberButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          if (button.dataset.num === ".") {
+            addDecimal();
+          } else {
+            appendNumber(button.dataset.num);
+          }
+          updateDisplay();
+        });
+      });
+
+      operationButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          chooseOperation(button.dataset.op);
+          updateDisplay();
+        });
+      });
+
+      equalsButton.addEventListener("click", () => {
+        if (operation && previousInput && !resetScreen) {
+          compute();
+          updateDisplay();
+          resetScreen = true;
+        }
+      });
+
+      clearButton.addEventListener("click", () => {
+        clear();
+        updateDisplay();
+      });
+
+      backspaceButton.addEventListener("click", () => {
+        backspace();
+        updateDisplay();
+      });
+
+      // Keyboard support
+      document.addEventListener("keydown", (e) => {
+        if (e.key >= 0 && e.key <= 9) appendNumber(e.key);
+        if (e.key === ".") addDecimal();
+        if (e.key === "Escape") clear();
+        if (e.key === "Backspace") backspace();
+        if (e.key === "Enter" || e.key === "=") {
+          if (operation && previousInput && !resetScreen) {
+            compute();
+            updateDisplay();
+            resetScreen = true;
+          }
+        }
+        if (
+          e.key === "+" ||
+          e.key === "-" ||
+          e.key === "*" ||
+          e.key === "/" ||
+          e.key === "%"
+        ) {
+          chooseOperation(
+            e.key === "*"
+              ? "×"
+              : e.key === "/"
+              ? "÷"
+              : e.key === "-"
+              ? "−"
+              : e.key
+          );
+        }
+        updateDisplay();
+      });
+
+      // Initial display
+      updateDisplay();
+    </script>
+  </body>
+</html>
