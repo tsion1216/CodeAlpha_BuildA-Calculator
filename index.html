@@ -248,13 +248,7 @@
         const prev = parseFloat(previousInput);
         const current = parseFloat(currentInput);
 
-        if (isNaN(prev)) return;
-        if (isNaN(current)) {
-          currentInput = prev.toString();
-          operation = null;
-          previousInput = "";
-          return;
-        }
+        if (isNaN(prev) || isNaN(current)) return;
 
         switch (operation) {
           case "+":
@@ -281,6 +275,9 @@
           default:
             return;
         }
+
+        // Round to 10 decimal places to avoid floating point precision issues
+        computation = Math.round(computation * 10000000000) / 10000000000;
 
         currentInput = computation.toString();
         operation = null;
@@ -331,7 +328,11 @@
       });
 
       equalsButton.addEventListener("click", () => {
-        if (operation && previousInput && !resetScreen) {
+        if (operation && previousInput) {
+          // If we just pressed an operator and then equals, use current number as both operands
+          if (resetScreen) {
+            previousInput = currentInput;
+          }
           compute();
           updateDisplay();
           resetScreen = true;
@@ -355,7 +356,10 @@
         if (e.key === "Escape") clear();
         if (e.key === "Backspace") backspace();
         if (e.key === "Enter" || e.key === "=") {
-          if (operation && previousInput && !resetScreen) {
+          if (operation && previousInput) {
+            if (resetScreen) {
+              previousInput = currentInput;
+            }
             compute();
             updateDisplay();
             resetScreen = true;
