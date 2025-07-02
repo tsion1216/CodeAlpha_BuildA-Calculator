@@ -250,17 +250,27 @@
 
         if (isNaN(prev) || isNaN(current)) return;
 
-        switch (operation) {
+        // Convert operation symbols to consistent format
+        const op =
+          operation === "×"
+            ? "*"
+            : operation === "÷"
+            ? "/"
+            : operation === "−"
+            ? "-"
+            : operation;
+
+        switch (op) {
           case "+":
             computation = prev + current;
             break;
-          case "−":
+          case "-":
             computation = prev - current;
             break;
-          case "×": // Changed from *
+          case "*":
             computation = prev * current;
             break;
-          case "÷": // Changed from /
+          case "/":
             if (current === 0) {
               currentInput = "Error";
               operation = null;
