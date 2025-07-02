@@ -257,10 +257,10 @@
           case "−":
             computation = prev - current;
             break;
-          case "×":
+          case "×": // Changed from *
             computation = prev * current;
             break;
-          case "÷":
+          case "÷": // Changed from /
             if (current === 0) {
               currentInput = "Error";
               operation = null;
